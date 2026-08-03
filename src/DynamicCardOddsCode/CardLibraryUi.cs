@@ -5,6 +5,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Cards;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
+using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardLibrary;
 using System.Reflection;
 
@@ -14,6 +15,8 @@ internal static partial class DcoLibraryUi
 {
     private const string ButtonName = "DynamicCardOddsDisableButton";
     private const string OverlayName = "DynamicCardOddsDisabledOverlay";
+    private const string DetailPanelName = "DynamicCardOddsDetailPanel";
+    private const string DetailTextName = "DynamicCardOddsDetailText";
     private const string TouchedMeta = "dynamic_card_odds_ui_touched";
     private const string WatcherName = "DynamicCardOddsLibraryWatcher";
     private static readonly Vector2 ButtonSize = new(176f, 56f);
@@ -99,7 +102,10 @@ internal static partial class DcoLibraryUi
             return;
         }
         cardNode.SetMeta(TouchedMeta, Variant.From(true));
-        AppendOddsLine(cardNode, model!);
+        // Keep the normal encyclopedia cards untouched.  The odds are shown in
+        // a dedicated side panel only while the encyclopedia detail screen is
+        // open; appending BBCode here changes the card's text layout.
+        RemoveOddsFromCard(cardNode);
         ApplyDisabledLook(cardNode, model!);
         EnsureButton(cardNode, model!);
     }
@@ -208,13 +214,14 @@ internal static partial class DcoLibraryUi
         try
         {
             var body = cardNode.Body;
-            var overlay = body.GetNodeOrNull<ColorRect>(OverlayName);
-            if (!disabled)
-            {
-                HideAndFree(overlay);
-                body.Modulate = Colors.White;
-                return;
-            }
+            // v1.0.0 attached the mask under Body and also changed
+            // Body.Modulate. Hide that legacy node once, then keep the new
+            // mask directly under NCard so Body hover/reveal tweens cannot
+            // alter the mask's opacity.
+            var legacyOverlay = body.GetNodeOrNull<ColorRect>(OverlayName);
+            if (legacyOverlay is not null && GodotObject.IsInstanceValid(legacyOverlay))
+                legacyOverlay.Visible = false;
+            var overlay = cardNode.GetNodeOrNull<ColorRect>(OverlayName);
             if (overlay is null)
             {
                 overlay = new ColorRect
@@ -222,36 +229,41 @@ internal static partial class DcoLibraryUi
                     Name = OverlayName,
                     MouseFilter = Control.MouseFilterEnum.Ignore,
                     ZIndex = 39,
-                    Color = new Color(0.035f, 0.035f, 0.04f, 0.42f),
+                    Color = new Color(0.025f, 0.025f, 0.03f, 0.52f),
                 };
-                body.AddChild(overlay);
+                cardNode.AddChild(overlay);
             }
             overlay.SetAnchorsPreset(Control.LayoutPreset.FullRect);
             overlay.OffsetLeft = 0;
             overlay.OffsetTop = 0;
             overlay.OffsetRight = 0;
             overlay.OffsetBottom = 0;
-            overlay.Visible = true;
-            body.Modulate = new Color(0.68f, 0.68f, 0.68f, 0.98f);
+            overlay.Color = new Color(0.025f, 0.025f, 0.03f, 0.52f);
+            overlay.MouseFilter = Control.MouseFilterEnum.Ignore;
+            overlay.Visible = disabled;
+
+            // Do not tint Body.Modulate. The game animates the same property
+            // for hover, reveal and detail transitions; repeatedly forcing it
+            // every watcher tick made disabled cards flash between two tones.
+            // The persistent overlay is independent from those tweens and is
+            // hidden/reused instead of being QueueFree'd and recreated.
         }
         catch { }
     }
 
-    private static void AppendOddsLine(NCard cardNode, CardModel model)
+    private static void RemoveOddsFromCard(NCard cardNode)
     {
-        var label = GetDescriptionLabel(cardNode);
-        if (label is null)
-            return;
-        var current = GetLabelText(label);
-        if (string.IsNullOrWhiteSpace(current))
-            return;
-        var cleaned = RemoveOddsLine(current);
-        var insertion = $"\n[font_size=20]{DcoAdaptiveOdds.GetDisplayLine(model)}[/font_size]";
-        var updated = cleaned.Contains("[/center]", StringComparison.Ordinal)
-            ? cleaned.Replace("[/center]", insertion + "[/center]", StringComparison.Ordinal)
-            : cleaned + insertion;
-        if (!string.Equals(updated, current, StringComparison.Ordinal))
-            SetLabelText(label, updated);
+        try
+        {
+            var label = GetDescriptionLabel(cardNode);
+            var current = label is null ? null : GetLabelText(label);
+            if (string.IsNullOrEmpty(current))
+                return;
+            var cleaned = RemoveOddsLine(current);
+            if (!string.Equals(cleaned, current, StringComparison.Ordinal))
+                SetLabelText(label!, cleaned);
+        }
+        catch { }
     }
 
     private static string RemoveOddsLine(string text)
@@ -305,22 +317,15 @@ internal static partial class DcoLibraryUi
         HideAndFree(cardNode.GetNodeOrNull<Button>(ButtonName));
         try
         {
-            HideAndFree(cardNode.Body.GetNodeOrNull<ColorRect>(OverlayName));
-            cardNode.Body.Modulate = Colors.White;
+            var overlay = cardNode.GetNodeOrNull<ColorRect>(OverlayName);
+            if (overlay is not null && GodotObject.IsInstanceValid(overlay))
+                overlay.Visible = false;
+            var legacyOverlay = cardNode.Body.GetNodeOrNull<ColorRect>(OverlayName);
+            if (legacyOverlay is not null && GodotObject.IsInstanceValid(legacyOverlay))
+                legacyOverlay.Visible = false;
         }
         catch { }
-        try
-        {
-            var label = GetDescriptionLabel(cardNode);
-            var current = label is null ? null : GetLabelText(label);
-            if (!string.IsNullOrEmpty(current))
-            {
-                var cleaned = RemoveOddsLine(current);
-                if (!string.Equals(cleaned, current, StringComparison.Ordinal))
-                    SetLabelText(label!, cleaned);
-            }
-        }
-        catch { }
+        RemoveOddsFromCard(cardNode);
         try { cardNode.RemoveMeta(TouchedMeta); } catch { }
     }
 
@@ -331,6 +336,149 @@ internal static partial class DcoLibraryUi
         try { item.Visible = false; } catch { }
         try { if (item is Control control) control.MouseFilter = Control.MouseFilterEnum.Ignore; } catch { }
         try { item.QueueFree(); } catch { }
+    }
+
+    private static void UpdateDetailPanel(NCardLibrary? library)
+    {
+        NInspectCardScreen? inspect = null;
+        try { inspect = NGame.Instance?.InspectCardScreen; } catch { }
+        if (inspect is null || !GodotObject.IsInstanceValid(inspect))
+            return;
+
+        var grid = library is null ? null : GetGrid(library);
+        if (grid is null || !IsLibraryHostContext(grid) || !IsInspectVisible(inspect))
+        {
+            HideDetailPanel(inspect);
+            return;
+        }
+
+        try
+        {
+            var cardNode = inspect.GetNodeOrNull<NCard>("Card");
+            if (cardNode is null)
+            {
+                HideDetailPanel(inspect);
+                return;
+            }
+            RemoveOddsFromCard(cardNode);
+            var model = cardNode.Model;
+            if (!DcoAdaptiveOdds.ShouldShowCard(model))
+            {
+                HideDetailPanel(inspect);
+                return;
+            }
+
+            var panel = EnsureDetailPanel(inspect);
+            PositionDetailPanel(panel, inspect);
+            var text = panel.GetNodeOrNull<RichTextLabel>(DetailTextName);
+            if (text is not null)
+                text.Text = BuildDetailText(model!);
+            panel.Visible = true;
+        }
+        catch
+        {
+            HideDetailPanel(inspect);
+        }
+    }
+
+    private static PanelContainer EnsureDetailPanel(NInspectCardScreen inspect)
+    {
+        var existing = inspect.GetNodeOrNull<PanelContainer>(DetailPanelName);
+        if (existing is not null)
+            return existing;
+
+        var panel = new PanelContainer
+        {
+            Name = DetailPanelName,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+            ZIndex = 90,
+            ClipContents = true,
+        };
+        panel.AddThemeStyleboxOverride("panel", new StyleBoxFlat
+        {
+            BgColor = new Color(0.16f, 0.105f, 0.07f, 0.97f),
+            BorderColor = new Color(0.73f, 0.52f, 0.25f, 1f),
+            BorderWidthLeft = 4,
+            BorderWidthTop = 4,
+            BorderWidthRight = 4,
+            BorderWidthBottom = 4,
+            CornerRadiusTopLeft = 16,
+            CornerRadiusTopRight = 16,
+            CornerRadiusBottomLeft = 16,
+            CornerRadiusBottomRight = 16,
+            ShadowColor = new Color(0f, 0f, 0f, 0.62f),
+            ShadowSize = 9,
+            ShadowOffset = new Vector2(0f, 5f),
+            ContentMarginLeft = 24f,
+            ContentMarginRight = 24f,
+            ContentMarginTop = 20f,
+            ContentMarginBottom = 18f,
+        });
+
+        var text = new RichTextLabel
+        {
+            Name = DetailTextName,
+            BbcodeEnabled = true,
+            FitContent = false,
+            ScrollActive = false,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+        };
+        text.AddThemeColorOverride("default_color", new Color(0.93f, 0.86f, 0.72f));
+        text.AddThemeFontSizeOverride("normal_font_size", 19);
+        panel.AddChild(text);
+        inspect.AddChild(panel);
+        return panel;
+    }
+
+    private static void PositionDetailPanel(PanelContainer panel, NInspectCardScreen inspect)
+    {
+        var width = 1920f;
+        try
+        {
+            if (inspect.Size.X > 1f)
+                width = inspect.Size.X;
+            else if (inspect.GetViewportRect().Size.X > 1f)
+                width = inspect.GetViewportRect().Size.X;
+        }
+        catch { }
+
+        var left = -Math.Min(760f, Math.Max(430f, width * 0.5f - 28f));
+        panel.AnchorLeft = 0.5f;
+        panel.AnchorRight = 0.5f;
+        panel.AnchorTop = 0.5f;
+        panel.AnchorBottom = 0.5f;
+        panel.OffsetLeft = left;
+        panel.OffsetRight = left + 410f;
+        panel.OffsetTop = -185f;
+        panel.OffsetBottom = 185f;
+    }
+
+    private static string BuildDetailText(CardModel model)
+    {
+        var odds = DcoAdaptiveOdds.GetDisplayOdds(model);
+        var status = odds.Disabled
+            ? "[color=#E67462]已禁用 · 奖励出率 0x[/color]"
+            : "[color=#8FCB78]已启用[/color]";
+        return
+            "[center][font_size=27][color=#E9C878]动态出率[/color][/font_size]\n" +
+            $"[font_size=18]{status}[/font_size][/center]\n\n" +
+            $"[font_size=21]首张                 [color=#F2D58A]{odds.FirstCopy:0.00}x[/color]\n" +
+            $"第 2 张              [color=#F2D58A]{odds.SecondCopy:0.00}x[/color]\n" +
+            $"3 张及以上          [color=#F2D58A]{odds.ThirdOrMore:0.00}x[/color][/font_size]\n\n" +
+            "[font_size=15][color=#BFAE91]这是历史倾向倍率。实际奖励会再结合当前卡组，并在同稀有度候选池内归一化。[/color][/font_size]";
+    }
+
+    private static void HideDetailPanel(NInspectCardScreen? inspect = null)
+    {
+        try
+        {
+            inspect ??= NGame.Instance?.InspectCardScreen;
+            var panel = inspect?.GetNodeOrNull<PanelContainer>(DetailPanelName);
+            if (panel is not null && GodotObject.IsInstanceValid(panel))
+                panel.Visible = false;
+        }
+        catch { }
     }
 
     private static void CleanupGrid(NCardLibraryGrid grid)
@@ -350,6 +498,7 @@ internal static partial class DcoLibraryUi
     {
         try
         {
+            HideDetailPanel();
             if (Engine.GetMainLoop() is SceneTree tree && tree.Root is { } root)
                 CleanupRecursive(root, outsideOnly: false);
         }
@@ -380,13 +529,13 @@ internal static partial class DcoLibraryUi
 
     internal static bool IsLibraryContext(Node node)
     {
-        try
-        {
-            var inspect = NGame.Instance?.InspectCardScreen;
-            if (inspect is CanvasItem inspectItem && inspectItem.IsInsideTree() && inspectItem.Visible && inspectItem.IsVisibleInTree())
-                return false;
-        }
-        catch { }
+        if (IsInspectVisible())
+            return false;
+        return IsLibraryHostContext(node);
+    }
+
+    private static bool IsLibraryHostContext(Node node)
+    {
         NCardLibrary? library = null;
         NCardLibraryGrid? grid = null;
         for (var current = node; current != null; current = current.GetParent())
@@ -405,6 +554,16 @@ internal static partial class DcoLibraryUi
         if (library is null || grid is null || !IsVisible(library) || !IsVisible(grid) || !IsUnderCurrentScene(library))
             return false;
         return ReferenceEquals(GetGrid(library), grid);
+    }
+
+    private static bool IsInspectVisible(NInspectCardScreen? inspect = null)
+    {
+        try
+        {
+            inspect ??= NGame.Instance?.InspectCardScreen;
+            return inspect is CanvasItem item && item.IsInsideTree() && item.Visible && item.IsVisibleInTree();
+        }
+        catch { return false; }
     }
 
     private static bool IsVisible(Node node)
@@ -468,16 +627,21 @@ internal static partial class DcoLibraryUi
                 if (_library is null || !GodotObject.IsInstanceValid(_library) || !_library.IsInsideTree())
                     _library = FindLibrary();
                 var grid = _library is null ? null : GetGrid(_library);
-                var visible = grid is not null && IsLibraryContext(grid);
+                var visible = grid is not null && IsLibraryHostContext(grid);
                 if (!visible)
                 {
                     if (_active)
                         CleanupAll();
+                    else
+                        HideDetailPanel();
                     _active = false;
                     _library = null;
                     return;
                 }
                 _active = true;
+                UpdateDetailPanel(_library);
+                if (IsInspectVisible())
+                    return;
                 CleanupOutsideLibrary();
                 ApplyGrid(grid!);
             }

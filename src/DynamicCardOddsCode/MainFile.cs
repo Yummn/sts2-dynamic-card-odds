@@ -28,13 +28,13 @@ public partial class MainFile : Node
 
         if (android && TrySchedulePatches(harmony, patches))
         {
-            Logger.Info($"[DynamicCardOdds] v1.0.0 Android patch queue scheduled: {patches.Count} gameplay hooks; UI uses a detour-free encyclopedia watcher.");
+            Logger.Info($"[DynamicCardOdds] v1.0.1 Android patch queue scheduled: {patches.Count} gameplay hooks; odds use a detail-only side panel and the disabled mask is tween-independent.");
             return;
         }
 
         foreach (var type in patches)
             PatchOne(harmony, type);
-        Logger.Info($"[DynamicCardOdds] v1.0.0 loaded; patches={patches.Count}; anti-repeat deck fingerprint intentionally disabled.");
+        Logger.Info($"[DynamicCardOdds] v1.0.1 loaded; patches={patches.Count}; detail-only odds panel enabled; anti-repeat deck fingerprint intentionally disabled.");
     }
 
     private static bool IsAndroidUiPatch(Type type) =>

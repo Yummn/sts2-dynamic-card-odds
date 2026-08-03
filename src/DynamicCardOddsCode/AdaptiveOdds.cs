@@ -244,7 +244,7 @@ internal static class DcoAdaptiveOdds
 
     public static bool ShouldShowCard(CardModel? card) => card is not null && IsDefectCard(card) && !IsUnsupportedRarity(card.Rarity);
 
-    public static string GetDisplayLine(CardModel card)
+    public static DcoDisplayOdds GetDisplayOdds(CardModel card)
     {
         lock (StateLock)
         {
@@ -261,9 +261,15 @@ internal static class DcoAdaptiveOdds
             var mean = Math.Max(0.0001, factors.Average());
             for (var i = 0; i < factors.Length; i++)
                 factors[i] = Math.Clamp(factors[i] / mean, 0.55, 1.65);
-            var suffix = disabled ? "  [color=#D86A5A]已禁用（0x）[/color]" : string.Empty;
-            return $"[color=#E6C15A]动态出率：首张{factors[0]:0.00}x · 第2张{factors[1]:0.00}x · 3张+{factors[2]:0.00}x[/color]{suffix}";
+            return new DcoDisplayOdds(factors[0], factors[1], factors[2], disabled);
         }
+    }
+
+    public static string GetDisplayLine(CardModel card)
+    {
+        var odds = GetDisplayOdds(card);
+        var suffix = odds.Disabled ? "  [color=#D86A5A]已禁用（0x）[/color]" : string.Empty;
+        return $"[color=#E6C15A]动态出率：首张{odds.FirstCopy:0.00}x · 第2张{odds.SecondCopy:0.00}x · 3张+{odds.ThirdOrMore:0.00}x[/color]{suffix}";
     }
 
     internal static string CardKeyForPatch(CardModel card) => CardKey(card);
@@ -620,6 +626,12 @@ internal static class DcoAdaptiveOdds
         PropertyNameCaseInsensitive = true,
     };
 }
+
+internal readonly record struct DcoDisplayOdds(
+    double FirstCopy,
+    double SecondCopy,
+    double ThirdOrMore,
+    bool Disabled);
 
 internal sealed class DcoState
 {
