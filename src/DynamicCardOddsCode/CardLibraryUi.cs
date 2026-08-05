@@ -54,6 +54,11 @@ internal static partial class DcoLibraryUi
     {
         try
         {
+            if (IsInspectVisible())
+            {
+                CleanupGrid(grid);
+                return;
+            }
             if (!IsLibraryContext(grid))
             {
                 CleanupGrid(grid);
@@ -90,7 +95,7 @@ internal static partial class DcoLibraryUi
 
     private static void ApplyCard(NCard cardNode, bool assumeLibrary = false)
     {
-        if (!assumeLibrary && !IsLibraryContext(cardNode))
+        if (IsInspectVisible() || (!assumeLibrary && !IsLibraryContext(cardNode)))
         {
             RemoveUi(cardNode);
             return;
@@ -641,7 +646,10 @@ internal static partial class DcoLibraryUi
                 _active = true;
                 UpdateDetailPanel(_library);
                 if (IsInspectVisible())
+                {
+                    CleanupOutsideLibrary();
                     return;
+                }
                 CleanupOutsideLibrary();
                 ApplyGrid(grid!);
             }

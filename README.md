@@ -2,6 +2,10 @@
 
 《杀戮尖塔 2》故障机器人卡牌奖励学习模组。它从 BetterDefect v0.11.35 起独立发布，不依赖 BetterDefect 或 BaseLib。
 
+## 最新版本
+
+- [v1.0.2](https://github.com/Yummn/sts2-dynamic-card-odds/releases/tag/v1.0.2)：修复从百科大全打开卡牌详情后，列表卡牌仍显示禁用出率按钮的问题。详情页打开时会立即清理按钮和遮罩，并阻止转场期间的延迟刷新再次注入控件。Android v103、Android v110.1 与 PC v107.1 分别编译。
+
 ## 功能
 
 - 只学习“正好三张、且全部为机器人卡牌”的普通卡牌奖励；无色、混色和四张奖励不会污染统计。
