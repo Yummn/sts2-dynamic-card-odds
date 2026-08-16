@@ -15,6 +15,7 @@ internal static partial class DcoLibraryUi
 {
     private const string ButtonName = "DynamicCardOddsDisableButton";
     private const string OverlayName = "DynamicCardOddsDisabledOverlay";
+    private const string OverlayPolygonName = "DynamicCardOddsDisabledOverlayPolygon";
     private const string DetailPanelName = "DynamicCardOddsDetailPanel";
     private const string DetailTextName = "DynamicCardOddsDetailText";
     private const string TouchedMeta = "dynamic_card_odds_ui_touched";
@@ -226,36 +227,35 @@ internal static partial class DcoLibraryUi
             var legacyOverlay = body.GetNodeOrNull<ColorRect>(OverlayName);
             if (legacyOverlay is not null && GodotObject.IsInstanceValid(legacyOverlay))
                 legacyOverlay.Visible = false;
-            var overlay = cardNode.GetNodeOrNull<ColorRect>(OverlayName);
+            var oldOverlay = cardNode.GetNodeOrNull<ColorRect>(OverlayName);
+            if (oldOverlay is not null && GodotObject.IsInstanceValid(oldOverlay))
+                oldOverlay.Visible = false;
+            var overlay = cardNode.GetNodeOrNull<Polygon2D>(OverlayPolygonName);
             if (overlay is null)
             {
-                overlay = new ColorRect
+                overlay = new Polygon2D
                 {
-                    Name = OverlayName,
-                    MouseFilter = Control.MouseFilterEnum.Ignore,
+                    Name = OverlayPolygonName,
                     ZIndex = 80,
                     Color = new Color(0.025f, 0.025f, 0.03f, 0.52f),
                 };
                 cardNode.AddChild(overlay);
             }
-            // NCard's encyclopedia instances can briefly report a zero-sized
-            // parent during pooled-grid relayout. FullRect anchors therefore
-            // produced a persistent 0x0 mask on some Android/PC runs. Use the
-            // card's canonical 300x422 local rectangle explicitly and refresh
-            // it after every pool reuse.
-            overlay.SetAnchorsPreset(Control.LayoutPreset.TopLeft);
-            overlay.OffsetLeft = 0;
-            overlay.OffsetTop = 0;
-            overlay.OffsetRight = NCard.defaultSize.X;
-            overlay.OffsetBottom = NCard.defaultSize.Y;
+            // Polygon2D is purely visual and cannot affect the pooled card
+            // container's minimum-size calculation on Android.
+            var halfWidth = NCard.defaultSize.X * 0.5f;
+            overlay.Polygon = new[]
+            {
+                new Vector2(-halfWidth, 0f),
+                new Vector2(halfWidth, 0f),
+                new Vector2(halfWidth, NCard.defaultSize.Y),
+                new Vector2(-halfWidth, NCard.defaultSize.Y),
+            };
             overlay.Position = Vector2.Zero;
-            overlay.Size = NCard.defaultSize;
-            overlay.CustomMinimumSize = NCard.defaultSize;
             overlay.ZIndex = 80;
             overlay.Color = new Color(0.025f, 0.025f, 0.03f, 0.52f);
             overlay.Modulate = Colors.White;
             overlay.SelfModulate = Colors.White;
-            overlay.MouseFilter = Control.MouseFilterEnum.Ignore;
             overlay.Visible = disabled;
             if (disabled)
                 overlay.MoveToFront();
@@ -338,6 +338,9 @@ internal static partial class DcoLibraryUi
             var overlay = cardNode.GetNodeOrNull<ColorRect>(OverlayName);
             if (overlay is not null && GodotObject.IsInstanceValid(overlay))
                 overlay.Visible = false;
+            var polygon = cardNode.GetNodeOrNull<Polygon2D>(OverlayPolygonName);
+            if (polygon is not null && GodotObject.IsInstanceValid(polygon))
+                polygon.Visible = false;
             var legacyOverlay = cardNode.Body.GetNodeOrNull<ColorRect>(OverlayName);
             if (legacyOverlay is not null && GodotObject.IsInstanceValid(legacyOverlay))
                 legacyOverlay.Visible = false;
