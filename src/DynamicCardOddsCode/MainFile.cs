@@ -28,13 +28,13 @@ public partial class MainFile : Node
 
         if (android && TrySchedulePatches(harmony, patches))
         {
-            Logger.Info($"[DynamicCardOdds] v1.0.6 Android patch queue scheduled: {patches.Count} gameplay hooks; disabled-card masks use a layout-independent Polygon2D.");
+            Logger.Info($"[DynamicCardOdds] v1.0.7 Android patch queue scheduled: {patches.Count} gameplay hooks; disabled-card masks follow the real CardContainer rectangle.");
             return;
         }
 
         foreach (var type in patches)
             PatchOne(harmony, type);
-        Logger.Info($"[DynamicCardOdds] v1.0.6 loaded; patches={patches.Count}; disabled-card masks use a layout-independent Polygon2D; anti-repeat deck fingerprint intentionally disabled.");
+        Logger.Info($"[DynamicCardOdds] v1.0.7 loaded; patches={patches.Count}; disabled-card masks follow the real CardContainer rectangle; anti-repeat deck fingerprint intentionally disabled.");
     }
 
     private static bool IsAndroidUiPatch(Type type) =>

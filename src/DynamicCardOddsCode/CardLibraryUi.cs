@@ -220,17 +220,22 @@ internal static partial class DcoLibraryUi
         try
         {
             var body = cardNode.Body;
-            // v1.0.0 attached the mask under Body and also changed
-            // Body.Modulate. Hide that legacy node once, then keep the new
-            // mask directly under NCard so Body hover/reveal tweens cannot
-            // alter the mask's opacity.
+            // Keep the mask under CardContainer. CardContainer owns the real
+            // card rectangle and all hover/scroll transforms, whereas NCard
+            // itself uses a centre-oriented layout origin in the library.
             var legacyOverlay = body.GetNodeOrNull<ColorRect>(OverlayName);
             if (legacyOverlay is not null && GodotObject.IsInstanceValid(legacyOverlay))
                 legacyOverlay.Visible = false;
             var oldOverlay = cardNode.GetNodeOrNull<ColorRect>(OverlayName);
             if (oldOverlay is not null && GodotObject.IsInstanceValid(oldOverlay))
                 oldOverlay.Visible = false;
-            var overlay = cardNode.GetNodeOrNull<Polygon2D>(OverlayPolygonName);
+            var rootOverlay = cardNode.GetNodeOrNull<Polygon2D>(OverlayPolygonName);
+            if (rootOverlay is not null && GodotObject.IsInstanceValid(rootOverlay))
+            {
+                rootOverlay.Visible = false;
+                rootOverlay.QueueFree();
+            }
+            var overlay = body.GetNodeOrNull<Polygon2D>(OverlayPolygonName);
             if (overlay is null)
             {
                 overlay = new Polygon2D
@@ -239,17 +244,20 @@ internal static partial class DcoLibraryUi
                     ZIndex = 80,
                     Color = new Color(0.025f, 0.025f, 0.03f, 0.52f),
                 };
-                cardNode.AddChild(overlay);
+                body.AddChild(overlay);
             }
-            // Polygon2D is purely visual and cannot affect the pooled card
-            // container's minimum-size calculation on Android.
-            var halfWidth = NCard.defaultSize.X * 0.5f;
+            // Polygon2D is layout-neutral but now takes its dimensions from
+            // the actual CardContainer instead of assuming NCard coordinates.
+            var visualSize = body.Size;
+            if (visualSize.X <= 1f || visualSize.Y <= 1f)
+                visualSize = NCard.defaultSize;
+            var halfSize = visualSize * 0.5f;
             overlay.Polygon = new[]
             {
-                new Vector2(-halfWidth, 0f),
-                new Vector2(halfWidth, 0f),
-                new Vector2(halfWidth, NCard.defaultSize.Y),
-                new Vector2(-halfWidth, NCard.defaultSize.Y),
+                new Vector2(-halfSize.X, -halfSize.Y),
+                new Vector2(halfSize.X, -halfSize.Y),
+                new Vector2(halfSize.X, halfSize.Y),
+                new Vector2(-halfSize.X, halfSize.Y),
             };
             overlay.Position = Vector2.Zero;
             overlay.ZIndex = 80;
@@ -341,6 +349,9 @@ internal static partial class DcoLibraryUi
             var polygon = cardNode.GetNodeOrNull<Polygon2D>(OverlayPolygonName);
             if (polygon is not null && GodotObject.IsInstanceValid(polygon))
                 polygon.Visible = false;
+            var bodyPolygon = cardNode.Body.GetNodeOrNull<Polygon2D>(OverlayPolygonName);
+            if (bodyPolygon is not null && GodotObject.IsInstanceValid(bodyPolygon))
+                bodyPolygon.Visible = false;
             var legacyOverlay = cardNode.Body.GetNodeOrNull<ColorRect>(OverlayName);
             if (legacyOverlay is not null && GodotObject.IsInstanceValid(legacyOverlay))
                 legacyOverlay.Visible = false;

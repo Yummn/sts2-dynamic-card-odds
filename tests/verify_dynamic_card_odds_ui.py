@@ -28,16 +28,19 @@ require("IsInspectVisible(inspect)" in UI, "detail panel must require an open ca
 require("UpdateDetailPanel(_library);" in UI, "watcher must refresh the selected detail card")
 require("这是历史倾向倍率" in UI, "panel must distinguish tendency from exact probability")
 
-# The disabled mask must not fight the game's Body.Modulate tweens or churn nodes.
+# The disabled mask must follow the real card container without fighting the
+# game's Body.Modulate tweens or participating in Control layout.
 disabled_look = UI.split("private static void ApplyDisabledLook", 1)[1].split(
     "private static void RemoveOddsFromCard", 1
 )[0]
 require("body.Modulate" not in disabled_look, "disabled mask must not write Body.Modulate")
-require("cardNode.AddChild(overlay);" in disabled_look, "mask must sit outside animated Body")
+require("body.AddChild(overlay);" in disabled_look, "mask must follow CardContainer transforms")
+require("var visualSize = body.Size;" in disabled_look, "mask must use the live container size")
+require("var halfSize = visualSize * 0.5f;" in disabled_look, "mask must use CardContainer's centred coordinates")
 require("overlay.Visible = disabled;" in disabled_look, "mask must be persistent and visibility-driven")
 require("HideAndFree(overlay)" not in UI, "mask must not be queued for deletion during refresh")
 
 require("DcoDisplayOdds GetDisplayOdds" in ODDS, "UI requires structured display odds")
-require('"version": "1.0.1"' in MANIFEST, "manifest version must be v1.0.1")
+require('"version": "1.0.7"' in MANIFEST, "manifest version must be v1.0.7")
 
-print("PASS: DynamicCardOdds detail-only odds UI and stable disabled overlay")
+print("PASS: DynamicCardOdds detail-only odds UI and centred CardContainer disabled overlay")

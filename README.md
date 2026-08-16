@@ -4,6 +4,8 @@
 
 ## 最新版本
 
+- [v1.0.7](https://github.com/Yummn/sts2-dynamic-card-odds/releases/tag/v1.0.7)：修复手机百科大全禁用遮罩错位。遮罩现在挂在卡牌实际 CardContainer 下，并按容器中心坐标和实时尺寸绘制；已在 Android v110.1 实机完成禁用、遮罩对齐和重新启用验证。
+
 - [v1.0.6](https://github.com/Yummn/sts2-dynamic-card-odds/releases/tag/v1.0.6)：经 Android v110.1 实机验证，禁用遮罩改为不参与布局计算的 Polygon2D。修复旧 ColorRect 遮罩导致卡牌网格压缩成细条及遮罩向右错位的问题；禁用、恢复、进入详情页均已实机验证，原禁用记录保持不变。
 
 - [v1.0.3](https://github.com/Yummn/sts2-dynamic-card-odds/releases/tag/v1.0.3)：修复禁用卡牌的黑色遮罩在卡牌池复用与重新布局后尺寸变为零、无法显示的问题。遮罩改用固定卡牌矩形并置于卡牌顶层。Android v103、Android v110.1 与 PC v107.1 均已编译，PC 启动加载验证通过。
