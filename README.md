@@ -4,6 +4,8 @@
 
 ## 最新版本
 
+- [v1.0.3](https://github.com/Yummn/sts2-dynamic-card-odds/releases/tag/v1.0.3)：修复禁用卡牌的黑色遮罩在卡牌池复用与重新布局后尺寸变为零、无法显示的问题。遮罩改用固定卡牌矩形并置于卡牌顶层。Android v103、Android v110.1 与 PC v107.1 均已编译，PC 启动加载验证通过。
+
 - [v1.0.2](https://github.com/Yummn/sts2-dynamic-card-odds/releases/tag/v1.0.2)：修复从百科大全打开卡牌详情后，列表卡牌仍显示禁用出率按钮的问题。详情页打开时会立即清理按钮和遮罩，并阻止转场期间的延迟刷新再次注入控件。Android v103、Android v110.1 与 PC v107.1 分别编译。
 
 ## 功能

@@ -129,7 +129,7 @@ internal static partial class DcoLibraryUi
                 Position = new Vector2(28f, 48f),
                 FocusMode = Control.FocusModeEnum.None,
                 MouseFilter = Control.MouseFilterEnum.Stop,
-                ZIndex = 42,
+                ZIndex = 90,
             };
             void Toggle() => ToggleFromButton(cardNode);
             button.ButtonDown += Toggle;
@@ -233,19 +233,32 @@ internal static partial class DcoLibraryUi
                 {
                     Name = OverlayName,
                     MouseFilter = Control.MouseFilterEnum.Ignore,
-                    ZIndex = 39,
+                    ZIndex = 80,
                     Color = new Color(0.025f, 0.025f, 0.03f, 0.52f),
                 };
                 cardNode.AddChild(overlay);
             }
-            overlay.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+            // NCard's encyclopedia instances can briefly report a zero-sized
+            // parent during pooled-grid relayout. FullRect anchors therefore
+            // produced a persistent 0x0 mask on some Android/PC runs. Use the
+            // card's canonical 300x422 local rectangle explicitly and refresh
+            // it after every pool reuse.
+            overlay.SetAnchorsPreset(Control.LayoutPreset.TopLeft);
             overlay.OffsetLeft = 0;
             overlay.OffsetTop = 0;
-            overlay.OffsetRight = 0;
-            overlay.OffsetBottom = 0;
+            overlay.OffsetRight = NCard.defaultSize.X;
+            overlay.OffsetBottom = NCard.defaultSize.Y;
+            overlay.Position = Vector2.Zero;
+            overlay.Size = NCard.defaultSize;
+            overlay.CustomMinimumSize = NCard.defaultSize;
+            overlay.ZIndex = 80;
             overlay.Color = new Color(0.025f, 0.025f, 0.03f, 0.52f);
+            overlay.Modulate = Colors.White;
+            overlay.SelfModulate = Colors.White;
             overlay.MouseFilter = Control.MouseFilterEnum.Ignore;
             overlay.Visible = disabled;
+            if (disabled)
+                overlay.MoveToFront();
 
             // Do not tint Body.Modulate. The game animates the same property
             // for hover, reveal and detail transitions; repeatedly forcing it
