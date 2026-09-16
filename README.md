@@ -1,6 +1,23 @@
 # 动态出率 / DynamicCardOdds
 
-《杀戮尖塔 2》故障机器人卡牌奖励学习模组。它从 BetterDefect v0.11.35 起独立发布，不依赖 BetterDefect 或 BaseLib。
+> 项目分类：个人项目 / Slay the Spire 2 Mod / 可直接使用
+
+《杀戮尖塔 2》故障机器人卡牌奖励学习模组。它会根据历史展示与选择情况动态调整同稀有度卡牌的奖励权重，并提供卡牌禁用功能。
+
+它从 BetterDefect v0.11.35 起独立发布，不依赖 BetterDefect 或 BaseLib。
+
+## 下载与安装
+
+请从 [GitHub Releases](https://github.com/Yummn/sts2-dynamic-card-odds/releases) 下载与你的游戏平台和游戏版本对应的 ZIP。
+
+手动安装时，将压缩包中的 `DynamicCardOdds` 文件夹完整复制到游戏 `mods` 目录。
+
+## 兼容性
+
+- Android v0.103.2
+- Android v0.110.1
+- PC v0.107.1
+- 无 BaseLib 依赖
 
 ## 最新版本
 
@@ -35,15 +52,6 @@ DynamicCardOdds/DynamicCardOdds.state.dat
 ```
 
 替换 DLL 或重新安装模组不会要求重新设置；删除此文件才会重置统计与禁用记录。
-
-## 兼容性
-
-- Android v0.103.2
-- Android v0.110.1
-- PC v0.107.1
-- 无 BaseLib 依赖
-
-请从 GitHub Releases 下载与游戏平台及版本对应的中文文件名 ZIP。压缩包中的 `DynamicCardOdds` 文件夹应放入游戏 `mods` 目录。
 
 ## 构建
 
